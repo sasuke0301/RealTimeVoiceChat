@@ -18,7 +18,6 @@ Install it by extracting the contents of this package and using;
 $ npm i
 ```
      
-     
 Start your server with:
 
 ```shell
