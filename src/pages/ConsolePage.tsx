@@ -643,7 +643,7 @@ export function ConsolePage() {
                   </div>
                 );
               })}
-            </div>
+            </div> 
           </div>
           <div className="content-actions">
             <div className="spacer" />
