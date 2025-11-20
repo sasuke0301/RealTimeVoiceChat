@@ -19,7 +19,7 @@ import { WavRecorder, WavStreamPlayer } from '../lib/wavtools/index.js';
 import { instructions } from '../utils/conversation_config.js';
 import { WavRenderer } from '../utils/wav_renderer';
 
-import { X, Edit, ArrowUp, ArrowDown } from 'react-feather';
+import { X, Edit, Zap, ArrowUp, ArrowDown } from 'react-feather';
 import { Button } from '../components/button/Button';
 import { Map } from '../components/Map';
 
@@ -477,13 +477,6 @@ export function ConsolePage() {
   }, []);
 
   /**
-   * Auto-connect on page load
-   */
-  useEffect(() => {
-    connectConversation();
-  }, [connectConversation]);
-
-  /**
    * Render the application
    */
   return (
@@ -643,7 +636,7 @@ export function ConsolePage() {
                   </div>
                 );
               })}
-            </div> 
+            </div>
           </div>
           <div className="content-actions">
             <div className="spacer" />
@@ -657,6 +650,15 @@ export function ConsolePage() {
               />
             )}
             <div className="spacer" />
+            <Button
+              label={isConnected ? 'disconnect' : 'connect'}
+              iconPosition={isConnected ? 'end' : 'start'}
+              icon={isConnected ? X : Zap}
+              buttonStyle={isConnected ? 'regular' : 'action'}
+              onClick={
+                isConnected ? disconnectConversation : connectConversation
+              }
+            />
           </div>
         </div>
       </div>
