@@ -21,6 +21,7 @@ import { WavRenderer } from '../utils/wav_renderer';
 
 import { X, Edit, Zap, ArrowUp, ArrowDown } from 'react-feather';
 import { Button } from '../components/button/Button';
+import { Toggle } from '../components/toggle/Toggle';
 import { Map } from '../components/Map';
 
 import './ConsolePage.scss';
@@ -115,6 +116,7 @@ export function ConsolePage() {
     [key: string]: boolean;
   }>({});
   const [isConnected, setIsConnected] = useState(false);
+  const [canPushToTalk, setCanPushToTalk] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [memoryKv, setMemoryKv] = useState<{ [key: string]: any }>({});
   const [coords, setCoords] = useState<Coordinates | null>({
@@ -186,6 +188,10 @@ export function ConsolePage() {
         // text: `For testing purposes, I want you to list ten car brands. Number each item, e.g. "one (or whatever number you are one): the item name".`
       },
     ]);
+
+    if (client.getTurnDetectionType() === 'server_vad') {
+      await wavRecorder.record((data) => client.appendInputAudio(data.mono));
+    }
   }, []);
 
   /**
@@ -243,6 +249,24 @@ export function ConsolePage() {
     const wavRecorder = wavRecorderRef.current;
     await wavRecorder.pause();
     client.createResponse();
+  };
+
+  /**
+   * Switch between Manual <> VAD mode for communication
+   */
+  const changeTurnEndType = async (value: string) => {
+    const client = clientRef.current;
+    const wavRecorder = wavRecorderRef.current;
+    if (value === 'none' && wavRecorder.getStatus() === 'recording') {
+      await wavRecorder.pause();
+    }
+    client.updateSession({
+      turn_detection: value === 'none' ? null : { type: 'server_vad' },
+    });
+    if (value === 'server_vad' && client.isConnected()) {
+      await wavRecorder.record((data) => client.appendInputAudio(data.mono));
+    }
+    setCanPushToTalk(value === 'none');
   };
 
   /**
@@ -639,12 +663,18 @@ export function ConsolePage() {
             </div>
           </div>
           <div className="content-actions">
+            <Toggle
+              defaultValue={false}
+              labels={['manual', 'vad']}
+              values={['none', 'server_vad']}
+              onChange={(_, value) => changeTurnEndType(value)}
+            />
             <div className="spacer" />
-            {isConnected && (
+            {isConnected && canPushToTalk && (
               <Button
                 label={isRecording ? 'release to send' : 'push to talk'}
                 buttonStyle={isRecording ? 'alert' : 'regular'}
-                disabled={!isConnected}
+                disabled={!isConnected || !canPushToTalk}
                 onMouseDown={startRecording}
                 onMouseUp={stopRecording}
               />
@@ -659,6 +689,40 @@ export function ConsolePage() {
                 isConnected ? disconnectConversation : connectConversation
               }
             />
+          </div>
+        </div>
+        <div className="content-right">
+          <div className="content-block map">
+            <div className="content-block-title">get_weather()</div>
+            <div className="content-block-title bottom">
+              {marker?.location || 'not yet retrieved'}
+              {!!marker?.temperature && (
+                <>
+                  <br />
+                  🌡️ {marker.temperature.value} {marker.temperature.units}
+                </>
+              )}
+              {!!marker?.wind_speed && (
+                <>
+                  {' '}
+                  🍃 {marker.wind_speed.value} {marker.wind_speed.units}
+                </>
+              )}
+            </div>
+            <div className="content-block-body full">
+              {coords && (
+                <Map
+                  center={[coords.lat, coords.lng]}
+                  location={coords.location}
+                />
+              )}
+            </div>
+          </div>
+          <div className="content-block kv">
+            <div className="content-block-title">set_memory()</div>
+            <div className="content-block-body content-kv">
+              {JSON.stringify(memoryKv, null, 2)}
+            </div>
           </div>
         </div>
       </div>
